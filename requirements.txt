@@ -22,4 +22,8 @@ flake8==6.1.0
 
 # Production dependencies
 # uwsgi==2.0.22  # Removed - not compatible with Python 3.13
+<<<<<<< HEAD
 supervisor==4.2.5
+=======
+supervisor==4.2.5
+>>>>>>> a573a6b9c94a15f39f69e99200799808892db174
