@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI CRM Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chatbot-container {
+            width: 90%;
+            max-width: 800px;
+            height: 600px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            margin-bottom: 5px;
+            font-size: 1.5em;
+        }
+
+        .chat-header .status {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            border: 1px solid #e2e8f0;
+            margin-left: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            margin-right: 10px;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .message-meta {
+            font-size: 0.75em;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .intent-tag {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            margin-left: 8px;
+        }
+
+        .contact-info {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 8px;
+            font-size: 0.85em;
+        }
+
+        .contact-info strong {
+            color: #0369a1;
+        }
+
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group {
+            flex: 1;
+            position: relative;
+        }
+
+        .chat-input input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input input:focus {
+            border-color: #4facfe;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 18px;
+            margin-left: 42px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #64748b;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-action {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 16px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quick-action:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+
+        .error-message {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #fecaca;
+        }
+
+        .connection-error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #fecaca;
+        }
+
+        @media (max-width: 768px) {
+            .chatbot-container {
+                width: 95%;
+                height: 90vh;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+            
+            .quick-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chatbot-container">
+        <div class="chat-header">
+            <div class="status-indicator"></div>
+            <h1>AI Customer Assistant</h1>
+            <div class="status">Connecting...</div>
+        </div>
+
+        <div class="connection-error" id="connectionError" style="display: none;">
+            Backend server is not running. Please start the Flask server on port 8083.
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-avatar">AI</div>
+                <div class="message-content">
+                    <div>Hello! I'm your AI customer assistant. I can help you with product inquiries, support questions, and manage your contact information in our CRM system.</div>
+                    <div class="message-meta">
+                        Try mentioning your email like: "My email is john@example.com and I'm interested in your products"
+                    </div>
+                    <div class="quick-actions">
+                        <div class="quick-action" onclick="sendQuickMessage('I need product information')">Product Info</div>
+                        <div class="quick-action" onclick="sendQuickMessage('I need support')">Support</div>
+                        <div class="quick-action" onclick="sendQuickMessage('I want to schedule a demo')">Schedule Demo</div>
+                        <div class="quick-action" onclick="sendQuickMessage('My email is john@example.com')">Test Contact Info</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+
+        <div class="chat-input">
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+            </div>
+            <button class="send-btn" onclick="sendMessage()" id="sendBtn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        class ChatbotClient {
+            constructor() {
+                // Try multiple possible API URLs
+                this.apiUrls = [
+                    'http://localhost:8083',
+                    'http://127.0.0.1:8083',
+                    'http://0.0.0.0:8083'
+                ];
+                this.apiUrl = null;
+                this.sessionId = this.generateSessionId();
+                this.messagesContainer = document.getElementById('chatMessages');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.typingIndicator = document.getElementById('typingIndicator');
+                this.connectionError = document.getElementById('connectionError');
+                
+                this.init();
+            }
+
+            generateSessionId() {
+                return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            }
+
+            async init() {
+                this.messageInput.focus();
+                await this.findWorkingApiUrl();
+                this.loadChatHistory();
+                this.startHealthCheck();
+            }
+
+            async findWorkingApiUrl() {
+                const statusText = document.querySelector('.status');
+                statusText.textContent = 'Connecting...';
+                
+                for (const url of this.apiUrls) {
+                    try {
+                        const response = await fetch(`${url}/health`, { 
+                            method: 'GET',
+                            timeout: 5000
+                        });
+                        if (response.ok) {
+                            this.apiUrl = url;
+                            console.log(`Connected to backend at ${url}`);
+                            this.updateConnectionStatus(true);
+                            return;
+                        }
+                    } catch (error) {
+                        console.log(`Failed to connect to ${url}:`, error);
+                    }
+                }
+                
+                // No working URL found
+                this.updateConnectionStatus(false);
+                console.error('Could not connect to any backend server');
+            }
+
+            updateConnectionStatus(connected) {
+                const statusIndicator = document.querySelector('.status-indicator');
+                const statusText = document.querySelector('.status');
+                const connectionError = document.getElementById('connectionError');
+                
+                if (connected) {
+                    statusIndicator.style.background = '#4ade80';
+                    statusText.textContent = 'Connected to CRM';
+                    connectionError.style.display = 'none';
+                } else {
+                    statusIndicator.style.background = '#f87171';
+                    statusText.textContent = 'Connection Failed';
+                    connectionError.style.display = 'block';
+                }
+            }
+
+            async loadChatHistory() {
+                if (!this.apiUrl) return;
+                
+                try {
+                    const response = await fetch(`${this.apiUrl}/history/${this.sessionId}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.history && data.history.length > 0) {
+                            data.history.forEach(msg => {
+                                this.addMessage(msg.user, 'user', null, msg.timestamp);
+                                this.addMessage(msg.bot, 'bot', null, msg.timestamp);
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading chat history:', error);
+                }
+            }
+
+            async sendMessage(message = null) {
+                const text = message || this.messageInput.value.trim();
+                if (!text) return;
+
+                if (!this.apiUrl) {
+                    this.addMessage('Cannot send message: Not connected to server', 'bot', null, null, true);
+                    return;
+                }
+
+                // Add user message to UI
+                this.addMessage(text, 'user');
+                
+                // Clear input and disable send button
+                this.messageInput.value = '';
+                this.sendBtn.disabled = true;
+                
+                // Show typing indicator
+                this.showTypingIndicator();
+
+                try {
+                    const response = await fetch(`${this.apiUrl}/chat`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: text,
+                            session_id: this.sessionId
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.hideTypingIndicator();
+                        this.addMessage(data.response, 'bot', {
+                            intent: data.intent,
+                            contact: data.contact
+                        });
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    this.hideTypingIndicator();
+                    this.addMessage('Sorry, I encountered an error. Please check if the server is running.', 'bot', null, null, true);
+                }
+
+                // Re-enable send button
+                this.sendBtn.disabled = false;
+                this.messageInput.focus();
+            }
+
+            addMessage(text, sender, metadata = null, timestamp = null, isError = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = sender === 'user' ? 'U' : 'AI';
+
+                const content = document.createElement('div');
+                content.className = 'message-content';
+
+                const messageText = document.createElement('div');
+                messageText.style.whiteSpace = 'pre-line';
+                messageText.style.lineHeight = '1.5';
+                messageText.textContent = text;
+                content.appendChild(messageText);
+
+                // Add metadata if available
+                if (metadata) {
+                    const metaDiv = document.createElement('div');
+                    metaDiv.className = 'message-meta';
+                    
+                    if (metadata.intent) {
+                        const intentTag = document.createElement('span');
+                        intentTag.className = 'intent-tag';
+                        intentTag.textContent = metadata.intent;
+                        metaDiv.appendChild(intentTag);
+                    }
+
+                    if (metadata.contact) {
+                        const contactInfo = document.createElement('div');
+                        contactInfo.className = 'contact-info';
+                        contactInfo.innerHTML = `
+                            <strong>Contact Found:</strong><br>
+                            Name: ${metadata.contact.name || 'N/A'}<br>
+                            Email: ${metadata.contact.email || 'N/A'}<br>
+                            Phone: ${metadata.contact.phone || 'N/A'}
+                        `;
+                        content.appendChild(contactInfo);
+                    }
+
+                    if (metaDiv.children.length > 0) {
+                        content.appendChild(metaDiv);
+                    }
+                }
+
+                // Add timestamp
+                if (timestamp) {
+                    const timeDiv = document.createElement('div');
+                    timeDiv.className = 'message-meta';
+                    timeDiv.textContent = new Date(timestamp).toLocaleTimeString();
+                    content.appendChild(timeDiv);
+                }
+
+                if (isError) {
+                    content.classList.add('error-message');
+                }
+
+                if (sender === 'user') {
+                    messageDiv.appendChild(content);
+                    messageDiv.appendChild(avatar);
+                } else {
+                    messageDiv.appendChild(avatar);
+                    messageDiv.appendChild(content);
+                }
+
+                this.messagesContainer.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+
+            showTypingIndicator() {
+                this.typingIndicator.style.display = 'block';
+                this.scrollToBottom();
+            }
+
+            hideTypingIndicator() {
+                this.typingIndicator.style.display = 'none';
+            }
+
+            scrollToBottom() {
+                this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+            }
+
+            startHealthCheck() {
+                // Check health every 30 seconds
+                setInterval(() => this.checkHealth(), 30000);
+            }
+
+            async checkHealth() {
+                if (!this.apiUrl) return;
+                
+                try {
+                    const response = await fetch(`${this.apiUrl}/health`);
+                    this.updateConnectionStatus(response.ok);
+                } catch (error) {
+                    this.updateConnectionStatus(false);
+                }
+            }
+        }
+
+        // Initialize chatbot
+        let chatbot;
+        document.addEventListener('DOMContentLoaded', () => {
+            chatbot = new ChatbotClient();
+        });
+
+        // Global functions for HTML event handlers
+        function sendMessage() {
+            if (chatbot) {
+                chatbot.sendMessage();
+            }
+        }
+
+        function sendQuickMessage(message) {
+            if (chatbot) {
+                chatbot.sendMessage(message);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
