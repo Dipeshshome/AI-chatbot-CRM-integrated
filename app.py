@@ -10,6 +10,8 @@ from typing import Dict, List, Optional
 import logging
 import random
 from dotenv import load_dotenv
+from flask import Flask, render_template
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -792,6 +794,11 @@ class ChatbotEngine:
 
 # Initialize chatbot engine
 chatbot = ChatbotEngine()
+
+
+@app.route('/')
+def home():
+    return render_template('index.html')  # index.html should be in the `templates/` folder
 
 @app.route('/chat', methods=['POST'])
 def chat():
